@@ -1,40 +1,59 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<meta name="viewport" content="width=device-width"><meta name="viewport" content="width=device-width"><html>
+<!DOCTYPE html>
+<html lang="ja">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.3">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; text-align: center; font: 29.3px 'Hiragino Sans'; -webkit-text-stroke: #000000}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; text-align: center; font: 29.3px Helvetica; -webkit-text-stroke: #000000}
-    p.p3 {margin: 0.0px 0.0px 0.0px 0.0px; text-align: justify; font: 14.0px 'Hiragino Mincho ProN'; -webkit-text-stroke: #000000; min-height: 21.0px}
-    p.p4 {margin: 0.0px 0.0px 0.0px 0.0px; text-align: center; font: 18.7px 'Hiragino Sans'; -webkit-text-stroke: #000000}
-    p.p5 {margin: 0.0px 0.0px 0.0px 0.0px; text-align: center; font: 18.7px 'Hiragino Sans'; color: #386573; -webkit-text-stroke: #386573}
-    p.p6 {margin: 0.0px 0.0px 0.0px 0.0px; text-align: center; font: 13.3px 'Hiragino Sans'; -webkit-text-stroke: #000000}
-    p.p7 {margin: 0.0px 0.0px 0.0px 0.0px; text-align: justify; font: 14.0px Times; -webkit-text-stroke: #000000}
-    span.s1 {font-kerning: none; color: #1b4b88; -webkit-text-stroke: 0px #1b4b88}
-    span.s2 {font-kerning: none}
-    span.s3 {font: 29.3px Helvetica; font-kerning: none}
-    span.s4 {font-kerning: none; color: #b00004; -webkit-text-stroke: 0px #b00004}
-    span.s5 {text-decoration: underline ; font-kerning: none}
-    span.s6 {font: 13.3px Helvetica; font-kerning: none; color: #383b3b; background-color: #ffffff; -webkit-text-stroke: 0px #383b3b}
-    span.s7 {font-kerning: none; color: #383b3b; background-color: #ffffff; -webkit-text-stroke: 0px #383b3b}
-    span.s8 {font: 13.3px Helvetica; font-kerning: none}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>まちの理科室</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            margin-top: 20px;
+            font-size: 1.8rem; /* 少し小さく調整 */
+        }
+        .highlight {
+            color: white;
+            background-color: #008000;
+            padding: 0 10px;
+        }
+        .button-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* 自動調整 */
+            gap: 10px;
+            max-width: 90%; /* 横幅を画面サイズに合わせる */
+            margin: 30px auto;
+        }
+        .button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e0e0e0;
+            color: #000;
+            text-decoration: none;
+            padding: 15px;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #d4d4d4;
+        }
+    </style>
 </head>
 <body>
-<img src="top1.jpg"></p>
-<img src="top2.jpg"></p>
-  <p class="p4"><span class="s2"><b>ポータルサイト</b><b></b></span></p>
-<p class="p5"><span class="s5"><a href="https://rika.fukui.jp/"><b>福井理科教材資料</b><b></b></a></span></p>
-<p class="p5"><span class="s5"><a href="file:///Users/echizencoast/Desktop/machinorika.html"><b>まちの理科室をつくろう</b><b></b></a></span></p>
-<p class="p5"><span class="s5"><a href="file:///Users/echizencoast/Desktop/plan.html"><b>探究イベントカレンダー</b><b></b></a></span></p>
-<p class="p5"><span class="s5"><a href="file:///Users/echizencoast/Desktop/explorer.html"><b>まちの探究家</b><b></b></a></span></p>
-<p class="p5"><span class="s5"><a href="file:///Users/echizencoast/Desktop/portfolio.html"><b>省察的実践記録ポートフォリオ</b><b></b></a></span></p>
-<p class="p6"><span class="s6">©</span><span class="s7">２０２５　</span><span class="s2">一般社団法人</span><span class="s8">N</span><span class="s2">３６<b>°</b><b></b></span></p>
-<p class="p7"><span class="s2"> </span></p>
+    <h1>まちの<span class="highlight">理</span>科室</h1>
+    <div class="button-container">
+        <a href="company-research.html" class="button">企業研究</a>
+        <a href="practice-record.html" class="button">実践記録</a>
+        <a href="exploration-questions.html" class="button">探究質問</a>
+        <a href="exploration-plan.html" class="button">探究計画</a>
+    </div>
 </body>
 </html>
-
