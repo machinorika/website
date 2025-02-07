@@ -14,7 +14,7 @@
         }
         h1 {
             margin-top: 20px;
-            font-size: 5vw; /* 画面幅に対する割合でフォントサイズを設定 */
+            font-size: 6vw; /* 画面幅に対する割合でフォントサイズを大きく設定 */
         }
         .highlight {
             color: white;
@@ -54,11 +54,102 @@
 <body>
     <h1>まちの<span class="highlight">理</span>科室</h1>
     <div class="button-container">
-        <a href="company-research.html" class="button">企業研究</a>
-        <a href="practice-record.html" class="button">実践記録</a>
-        <a href="exploration-questions.html" class="button">探究質問</a>
-        <a href="exploration-plan.html" class="button">探究計画</a>
+        <a href="machinokigyou.html" class="button">企業研究</a>
+        <a href="machinopractice.html" class="button">実践記録</a>
+        <a href="question.html" class="button">探究質問</a>
+        <a href="inquiryplan.html" class="button">探究計画</a>
     </div>
+    <p>福井県理科教育資料<br>
+        <a href="https://rika.fukui.jp" target="_blank">https://rika.fukui.jp</a>
+    </p>
     <iframe src="https://calendar.google.com/calendar/embed?src=2ef9f6f5ef944999d93bab4c487d5e4ad83ea90ffdc5a72899f7b6a0ff8fb903%40group.calendar.google.com&ctz=Asia%2FTokyo" style="border: 0" frameborder="0" scrolling="no"></iframe>
+</body>
+</html>
+ Public code references from 1 repository
+この変更により、タイトルの文字の大きさが大きくなります。
+
+カレンダーの下に
+
+一般社団法人（準備中）N３６°
+
+と６ポイントくらいで表記してください
+ただし、N３６°は１０ポイント
+1 reference
+以下のように、index.htmlファイルの該当部分を変更して、カレンダーの下に「一般社団法人（準備中）N３６°」を追加してください：
+
+HTML
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>まちの理科室</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            margin-top: 20px;
+            font-size: 6vw; /* 画面幅に対する割合でフォントサイズを大きく設定 */
+        }
+        .highlight {
+            color: white;
+            background-color: #008000;
+            padding: 0 10px;
+        }
+        .button-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* 自動調整 */
+            gap: 10px;
+            max-width: 90%; /* 横幅を画面サイズに合わせる */
+            margin: 30px auto;
+        }
+        .button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #e0e0e0;
+            color: #000;
+            text-decoration: none;
+            padding: 15px;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s;
+        }
+        .button:hover {
+            background-color: #d4d4d4;
+        }
+        iframe {
+            width: 90vw;  /* 画面幅の90% */
+            height: 50vh; /* 画面高さの50% */
+        }
+        .footer-text {
+            font-size: 6pt;
+            margin-top: 10px;
+        }
+        .footer-text .highlight {
+            font-size: 10pt;
+        }
+    </style>
+</head>
+<body>
+    <h1>まちの<span class="highlight">理</span>科室</h1>
+    <div class="button-container">
+        <a href="machinokigyou.html" class="button">企業研究</a>
+        <a href="machinopractice.html" class="button">実践記録</a>
+        <a href="question.html" class="button">探究質問</a>
+        <a href="inquiryplan.html" class="button">探究計画</a>
+    </div>
+    <p>福井県理科教育資料<br>
+        <a href="https://rika.fukui.jp" target="_blank">https://rika.fukui.jp</a>
+    </p>
+    <iframe src="https://calendar.google.com/calendar/embed?src=2ef9f6f5ef944999d93bab4c487d5e4ad83ea90ffdc5a72899f7b6a0ff8fb903%40group.calendar.google.com&ctz=Asia%2FTokyo" style="border: 0" frameborder="0" scrolling="no"></iframe>
+    <p class="footer-text">一般社団法人（準備中）<span class="highlight">N３６°</span></p>
 </body>
 </html>
