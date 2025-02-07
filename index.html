@@ -14,7 +14,7 @@
         }
         h1 {
             margin-top: 20px;
-            font-size: 1.8rem; /* 少し小さく調整 */
+            font-size: 5vw; /* 画面幅に対する割合でフォントサイズを設定 */
         }
         .highlight {
             color: white;
@@ -45,6 +45,10 @@
         .button:hover {
             background-color: #d4d4d4;
         }
+        iframe {
+            width: 90vw;  /* 画面幅の90% */
+            height: 50vh; /* 画面高さの50% */
+        }
     </style>
 </head>
 <body>
@@ -55,8 +59,6 @@
         <a href="exploration-questions.html" class="button">探究質問</a>
         <a href="exploration-plan.html" class="button">探究計画</a>
     </div>
-<iframe src="https://calendar.google.com/calendar/embed?src=2ef9f6f5ef944999d93bab4c487d5e4ad83ea90ffdc5a72899f7b6a0ff8fb903%40group.calendar.google.com&ctz=Asia%2FTokyo" style="border: 0" width="800" height="600" frameborder="0" scrolling="no"></iframe>
-
-    
+    <iframe src="https://calendar.google.com/calendar/embed?src=2ef9f6f5ef944999d93bab4c487d5e4ad83ea90ffdc5a72899f7b6a0ff8fb903%40group.calendar.google.com&ctz=Asia%2FTokyo" style="border: 0" frameborder="0" scrolling="no"></iframe>
 </body>
 </html>
