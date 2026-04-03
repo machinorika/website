@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>dB メーター — 音の大きさを測ろう</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif;
+      background: #f5f4f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    #app {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 2rem 1.5rem;
+      max-width: 400px;
+      width: 100%;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    }
+    h1 { font-size: 20px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+    .sub { font-size: 13px; color: #888; margin-bottom: 1.5rem; }
+    #db-display { text-align: center; margin: 0.5rem 0; }
+    #db-value { font-size: 80px; font-weight: 600; color: #1a1a1a; line-height: 1; transition: color 0.2s; }
+    #db-unit { font-size: 18px; color: #aaa; margin-top: 4px; }
+    #anim-canvas { display: block; width: 100%; height: 120px; margin: 0.5rem 0; border-radius: 10px; background: #f0eeea; }
+    #bar-wrap { background: #efefef; border-radius: 8px; height: 20px; overflow: hidden; margin: 1rem 0; }
+    #bar { height: 100%; width: 0%; border-radius: 8px; transition: width 0.08s, background 0.2s; background: #1D9E75; }
+    #scale { display: flex; justify-content: space-between; font-size: 11px; color: #bbb; margin-bottom: 1.5rem; }
+    #level-label { text-align: center; font-size: 14px; font-weight: 500; height: 22px; margin-bottom: 1.5rem; transition: color 0.2s; color: #1D9E75; }
+    .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 1.5rem; }
+    .stat { background: #f5f4f0; border-radius: 8px; padding: 10px; text-align: center; }
+    .stat-label { font-size: 11px; color: #999; margin-bottom: 4px; }
+    .stat-val { font-size: 18px; font-weight: 600; color: #1a1a1a; }
+    #start-btn {
+      display: block; width: 100%; padding: 14px;
+      border-radius: 10px; border: 1.5px solid #ddd;
+      background: #fff; font-size: 15px; font-weight: 500;
+      cursor: pointer; color: #1a1a1a;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    #start-btn:hover { background: #f5f4f0; }
+    #start-btn.active { background: #fff5f3; color: #c0392b; border-color: #e87060; }
+    #msg { font-size: 12px; color: #aaa; text-align: center; margin-top: 10px; min-height: 18px; }
+    #history { margin-bottom: 1rem; }
+    #history-title { font-size: 12px; font-weight: 500; color: #bbb; margin-bottom: 8px; letter-spacing: 0.05em; text-transform: uppercase; }
+    .history-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .history-bar-wrap { flex: 1; background: #efefef; border-radius: 4px; height: 8px; overflow: hidden; }
+    .history-bar { height: 100%; border-radius: 4px; }
+    footer { text-align: center; font-size: 11px; color: #ccc; margin-top: 1.5rem; }
+    #header { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+    #logo { height: 52px; width: auto; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #1a1a1a; }
+      #app { background: #242424; box-shadow: 0 2px 16px rgba(0,0,0,0.4); }
+      h1 { color: #f0f0f0; }
+      #db-value { color: #f0f0f0; }
+      .stat { background: #2e2e2e; }
+      .stat-val { color: #f0f0f0; }
+      #bar-wrap { background: #333; }
+      .history-bar-wrap { background: #333; }
+      #start-btn { background: #2e2e2e; color: #f0f0f0; border-color: #444; }
+      #start-btn:hover { background: #363636; }
+      #start-btn.active { background: #3a1f1c; color: #e87060; border-color: #c0392b; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="header">
+    <img id="logo" src="data:image/png;base64,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" alt="まちの理科室" />
+    <div>
+      <h1>dB メーター</h1>
+      <p class="sub" style="margin-bottom:0">スマートフォンのマイクで音の大きさを測定します</p>
+    </div>
+  </div>
+  <div style="margin-bottom:1.5rem;"></div>
+
+  <div id="db-display">
+    <div id="db-value">--</div>
+    <div id="db-unit">dB</div>
+  </div>
+
+<canvas id="anim-canvas"></canvas>
+
+  <div id="bar-wrap"><div id="bar"></div></div>
+  <div id="scale">
+    <span>0</span><span>20</span><span>40</span><span>60</span><span>80</span><span>100</span><span>120+</span>
+  </div>
+
+  <div id="level-label">計測開始ボタンを押してください</div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-label">最小</div><div class="stat-val" id="min-val">--</div></div>
+    <div class="stat"><div class="stat-label">平均</div><div class="stat-val" id="avg-val">--</div></div>
+    <div class="stat"><div class="stat-label">最大</div><div class="stat-val" id="max-val">--</div></div>
+  </div>
+
+  <div id="history">
+    <div id="history-title">直近の記録</div>
+    <div id="history-list"></div>
+  </div>
+
+<button id="start-btn">計測を開始する</button>
+
+  <div id="msg"></div>
+
+  <footer>Web Audio API を使用しています</footer>
+</div>
+
+<script>
+let audioCtx, analyser, source, stream, raf;
+let running = false;
+let minDb = Infinity, maxDb = -Infinity, sumDb = 0, countDb = 0;
+let history = [];
+
+const btn = document.getElementById('start-btn');
+const dbVal = document.getElementById('db-value');
+const bar = document.getElementById('bar');
+const label = document.getElementById('level-label');
+const minEl = document.getElementById('min-val');
+const maxEl = document.getElementById('max-val');
+const avgEl = document.getElementById('avg-val');
+const msg = document.getElementById('msg');
+const histList = document.getElementById('history-list');
+
+const LEVELS = [
+  { max: 30,  text: '静寂 — 図書館レベル',        color: '#1D9E75' },
+  { max: 50,  text: '静か — 住宅地の夜',           color: '#1D9E75' },
+  { max: 65,  text: '普通の会話レベル',             color: '#EF9F27' },
+  { max: 80,  text: 'にぎやか — 交通騒音',         color: '#EF9F27' },
+  { max: 95,  text: 'うるさい — 工場内',           color: '#D85A30' },
+  { max: 110, text: '非常に騒がしい — 危険域',     color: '#E24B4A' },
+  { max: 200, text: '極めて危険 — 聴覚障害のリスク', color: '#A32D2D' },
+];
+
+function getLevel(db) {
+  return LEVELS.find(l => db <= l.max) || LEVELS[LEVELS.length - 1];
+}
+
+function updateHistory(db) {
+  const now = new Date();
+  const t = now.getHours().toString().padStart(2,'0') + ':' +
+            now.getMinutes().toString().padStart(2,'0') + ':' +
+            now.getSeconds().toString().padStart(2,'0');
+  history.unshift({ db, t });
+  if (history.length > 5) history.pop();
+  histList.innerHTML = history.map(h => {
+    const pct = Math.min(100, (h.db / 130) * 100);
+    const lv = getLevel(h.db);
+    return `<div class="history-row">
+      <span style="min-width:44px;color:#bbb;font-size:11px;">${h.t}</span>
+      <div class="history-bar-wrap"><div class="history-bar" style="width:${pct}%;background:${lv.color}"></div></div>
+      <span style="min-width:38px;text-align:right;font-size:12px;color:#888;">${h.db} dB</span>
+    </div>`;
+  }).join('');
+}
+
+let lastRecordTime = 0;
+
+const canvas = document.getElementById('anim-canvas');
+const ctx = canvas.getContext('2d');
+let smoothDb = 0;
+let particles = [];
+let wavePhase = 0;
+
+function resizeCanvas() {
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+  canvas.height = canvas.offsetHeight * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return {r,g,b};
+}
+
+function drawIdle() {
+  const w = canvas.offsetWidth, h = canvas.offsetHeight;
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = 'rgba(180,180,180,0.4)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let x = 0; x <= w; x++) {
+    const y = h/2 + Math.sin((x / w) * Math.PI * 4 + wavePhase) * 4;
+    x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  wavePhase += 0.03;
+}
+
+function drawActive(db, color) {
+  const w = canvas.offsetWidth, h = canvas.offsetHeight;
+  ctx.clearRect(0, 0, w, h);
+
+  smoothDb += (db - smoothDb) * 0.15;
+  const intensity = smoothDb / 130;
+
+  // --- wave amplitude & frequency scale with db ---
+  const amp = 4 + intensity * (h * 0.42);
+  const freqMult = 1 + intensity * 5;
+  const speed = 0.04 + intensity * 0.14;
+  wavePhase += speed;
+
+  const rgb = hexToRgb(color);
+
+  // background glow for high volumes
+  if (intensity > 0.5) {
+    const glow = (intensity - 0.5) * 2;
+    const grad = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w/2);
+    grad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},${glow * 0.12})`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  // draw 3 layered waves
+  const layers = [
+    { alpha: 0.18, ampMult: 1.0, phaseMult: 1.0, lineW: 2.5 },
+    { alpha: 0.35, ampMult: 0.7, phaseMult: 1.3, lineW: 2.0 },
+    { alpha: 0.90, ampMult: 0.45, phaseMult: 1.7, lineW: 2.5 },
+  ];
+  layers.forEach(layer => {
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${layer.alpha})`;
+    ctx.lineWidth = layer.lineW;
+    for (let x = 0; x <= w; x++) {
+      const t = (x / w) * Math.PI * 2 * freqMult + wavePhase * layer.phaseMult;
+      const y = h/2 + Math.sin(t) * amp * layer.ampMult;
+      x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  });
+
+  // particles burst at high volumes
+  if (intensity > 0.65 && Math.random() < intensity * 0.6) {
+    particles.push({
+      x: Math.random() * w,
+      y: h / 2 + (Math.random() - 0.5) * amp * 2,
+      vx: (Math.random() - 0.5) * 3,
+      vy: (Math.random() - 0.5) * 3,
+      life: 1.0,
+      r: 2 + Math.random() * 3,
+    });
+  }
+  // draw & age particles
+  particles = particles.filter(p => p.life > 0);
+  particles.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},${p.life * 0.7})`;
+    ctx.fill();
+    p.x += p.vx; p.y += p.vy;
+    p.life -= 0.04;
+  });
+
+  // center line
+  ctx.beginPath();
+  ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.15)`;
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 6]);
+  ctx.moveTo(0, h/2); ctx.lineTo(w, h/2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// idle animation loop before mic starts
+let idleRaf;
+function idleLoop() {
+  drawIdle();
+  idleRaf = requestAnimationFrame(idleLoop);
+}
+idleLoop();
+
+function loop() {
+  const buf = new Uint8Array(analyser.fftSize);
+  analyser.getByteTimeDomainData(buf);
+  let sum = 0;
+  for (let i = 0; i < buf.length; i++) {
+    const v = (buf[i] - 128) / 128;
+    sum += v * v;
+  }
+  const rms = Math.sqrt(sum / buf.length);
+  let db = rms > 0 ? Math.round(20 * Math.log10(rms) + 100) : 0;
+  db = Math.max(0, Math.min(130, db));
+
+  dbVal.textContent = db;
+  const pct = Math.min(100, (db / 130) * 100);
+  bar.style.width = pct + '%';
+
+  const lv = getLevel(db);
+  bar.style.background = lv.color;
+  dbVal.style.color = lv.color;
+  label.style.color = lv.color;
+  label.textContent = lv.text;
+
+  drawActive(db, lv.color);
+
+  if (db > 0) {
+    if (db < minDb) minDb = db;
+    if (db > maxDb) maxDb = db;
+    sumDb += db; countDb++;
+    minEl.textContent = minDb;
+    maxEl.textContent = maxDb;
+    avgEl.textContent = Math.round(sumDb / countDb);
+
+    const now = Date.now();
+    if (now - lastRecordTime > 3000) {
+      updateHistory(db);
+      lastRecordTime = now;
+    }
+  }
+
+  raf = requestAnimationFrame(loop);
+}
+
+async function start() {
+  try {
+    cancelAnimationFrame(idleRaf);
+    msg.textContent = 'マイクへのアクセスを許可してください...';
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    analyser = audioCtx.createAnalyser();
+    analyser.fftSize = 2048;
+    source = audioCtx.createMediaStreamSource(stream);
+    source.connect(analyser);
+    running = true;
+    smoothDb = 0; particles = [];
+    btn.textContent = '計測を停止する';
+    btn.classList.add('active');
+    msg.textContent = 'マイク使用中 — 音を立ててみてください';
+    minDb = Infinity; maxDb = -Infinity; sumDb = 0; countDb = 0;
+    lastRecordTime = 0;
+    loop();
+  } catch(e) {
+    msg.textContent = 'マイクへのアクセスが拒否されました。ブラウザの設定を確認してください。';
+    idleLoop();
+  }
+}
+
+function stop() {
+  running = false;
+  cancelAnimationFrame(raf);
+  if (source) source.disconnect();
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  if (audioCtx) audioCtx.close();
+  btn.textContent = '計測を再開する';
+  btn.classList.remove('active');
+  label.textContent = '停止中';
+  label.style.color = '#aaa';
+  bar.style.width = '0%';
+  dbVal.textContent = '--';
+  dbVal.style.color = '#1a1a1a';
+  msg.textContent = '';
+  particles = [];
+  idleLoop();
+}
+
+btn.addEventListener('click', () => {
+  if (!running) start(); else stop();
+});
+</script>
+
+</body>
+</html>
