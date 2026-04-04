@@ -254,7 +254,7 @@ kbd { background: #f0f0f0; border: 1px solid #ccc; border-radius: 3px; padding: 
 //  ・ファイル名に日本語が含まれる場合はそのまま書いてもOKです：
 //      const PDF_PATH = './まちの理科室活動報告.pdf';
 // ============================================================
-const PDF_PATH = './まちの理科室活動報告.pdf';
+const PDF_PATH = './shizenposter.pdf';
  
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
