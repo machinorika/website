@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>まちの理科室 ｜ 音の波形</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;500;700;800&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #f8f9fa;
+  --white:    #ffffff;
+  --border:   #e2e6ea;
+  --border2:  #ced4da;
+  --text:     #1a1a2e;
+  --text-mid: #555e6a;
+  --text-lo:  #9aa3ae;
+  --accent:   #2563eb;
+  --accent-lo:#eff6ff;
+  --green:    #16a34a;
+  --green-lo: #f0fdf4;
+  --amber:    #d97706;
+  --amber-lo: #fffbeb;
+  --red:      #dc2626;
+  --red-lo:   #fef2f2;
+  --wave:     #2563eb;
+  --wave-fill:rgba(37,99,235,0.08);
+  --radius:   12px;
+  --shadow:   0 2px 12px rgba(0,0,0,0.06);
+}
+
+body {
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 20px 16px 40px;
+}
+
+.wrap { max-width: 720px; margin: 0 auto; }
+
+/* ── ヘッダー ── */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.app-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+.app-sub {
+  font-size: 0.75rem;
+  color: var(--text-lo);
+  margin-top: 2px;
+  font-weight: 500;
+}
+.brand-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-lo);
+  border: 1px solid rgba(37,99,235,0.2);
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+
+/* ── 数値カード ── */
+.meter-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.meter-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+.meter-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-lo);
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+}
+.meter-value {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+}
+.meter-unit {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-mid);
+  margin-left: 3px;
+}
+.meter-card.clip .meter-value { color: var(--red); }
+.meter-card.active-card .meter-value { color: var(--accent); }
+
+/* ── 波形スクリーン ── */
+.screen-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 14px;
+  position: relative;
+}
+.screen-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.screen-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mode-chip {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1.5px solid var(--border2);
+  color: var(--text-mid);
+  background: var(--white);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.mode-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--border);
+  transition: all 0.3s;
+  flex-shrink: 0;
+}
+.status-dot.on { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.status-dot.clip { background: var(--red); box-shadow: 0 0 6px var(--red); }
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 240px;
+  background: #fafbfc;
+}
+
+/* permission overlay */
+.perm-overlay {
+  position: absolute; inset: 0;
+  background: rgba(248,249,250,0.97);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  z-index: 10;
+}
+.perm-icon { font-size: 2.8rem; }
+.perm-text {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-mid);
+  text-align: center;
+  line-height: 1.7;
+}
+
+/* ── コントロール ── */
+.controls-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.ctrl-section-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-lo);
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+
+.sliders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.slider-row { display: flex; flex-direction: column; gap: 6px; }
+.slider-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.slider-name { font-size: 0.75rem; font-weight: 700; color: var(--text-mid); }
+.slider-val  { font-size: 0.8rem; font-weight: 800; color: var(--accent); }
+
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%; height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--white);
+  border: 2.5px solid var(--accent);
+  box-shadow: 0 1px 4px rgba(37,99,235,0.25);
+  cursor: pointer;
+  transition: box-shadow 0.15s;
+}
+input[type="range"]::-webkit-slider-thumb:active {
+  box-shadow: 0 0 0 4px rgba(37,99,235,0.15);
+}
+
+.toggle-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tog-btn {
+  padding: 8px 14px;
+  border: 1.5px solid var(--border2);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--text-mid);
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tog-btn:hover { border-color: var(--accent); color: var(--accent); }
+.tog-btn.active {
+  background: var(--accent-lo);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── スタートボタン ── */
+.start-btn {
+  width: 100%;
+  padding: 16px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  color: #fff;
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 16px rgba(37,99,235,0.3);
+  margin-bottom: 14px;
+  letter-spacing: 0.03em;
+}
+.start-btn:hover { background: #1d4ed8; box-shadow: 0 6px 20px rgba(37,99,235,0.4); }
+.start-btn.running {
+  background: var(--white);
+  color: var(--red);
+  border: 2px solid var(--red);
+  box-shadow: 0 2px 8px rgba(220,38,38,0.15);
+}
+
+/* ── 説明 ── */
+.hint-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  font-size: 0.75rem;
+  color: var(--text-mid);
+  line-height: 1.8;
+  font-weight: 500;
+}
+.hint-card strong { color: var(--accent); font-weight: 800; }
+
+hr.divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 12px 0;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ヘッダー -->
+  <div class="app-header">
+    <div>
+      <div class="app-title">🎙️ 音の波形モニター</div>
+      <div class="app-sub">マイクの音をリアルタイムで表示します</div>
+    </div>
+    <div class="brand-badge">まちの理科室</div>
+  </div>
+
+  <!-- 数値表示 -->
+  <div class="meter-row">
+    <div class="meter-card" id="card-vol">
+      <div class="meter-label">音の大きさ</div>
+      <div class="meter-value" id="disp-vol">－－<span class="meter-unit">dB</span></div>
+    </div>
+    <div class="meter-card" id="card-freq">
+      <div class="meter-label">音の高さ</div>
+      <div class="meter-value" id="disp-freq">－－<span class="meter-unit">Hz</span></div>
+    </div>
+    <div class="meter-card" id="card-peak">
+      <div class="meter-label">最大音量</div>
+      <div class="meter-value" id="disp-peak">－－<span class="meter-unit">dB</span></div>
+    </div>
+  </div>
+
+  <!-- 波形スクリーン -->
+  <div class="screen-card">
+    <div class="screen-toolbar">
+      <div class="screen-toolbar-left">
+        <div class="status-dot" id="status-dot"></div>
+        <div class="mode-chip active" data-mode="wave">波形</div>
+        <div class="mode-chip" data-mode="fft">スペクトル</div>
+        <div class="mode-chip" data-mode="both">両方</div>
+      </div>
+    </div>
+
+    <div style="position:relative;">
+      <canvas id="osc-canvas"></canvas>
+      <div class="perm-overlay" id="perm-overlay">
+        <div class="perm-icon">🎙️</div>
+        <div class="perm-text">
+          下の「スタート」ボタンを押して<br>マイクをオンにしてください
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- コントロール -->
+  <div class="controls-card">
+    <div class="ctrl-section-title">調整パネル</div>
+
+    <div class="sliders-grid">
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-name">感度（ゲイン）</span>
+          <span class="slider-val" id="val-gain">3.0</span>
+        </div>
+        <input type="range" id="ctrl-gain" min="1" max="10" step="0.1" value="3">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-name">表示の速さ</span>
+          <span class="slider-val" id="val-speed">標準</span>
+        </div>
+        <input type="range" id="ctrl-speed" min="1" max="5" step="1" value="3">
+      </div>
+      <div class="slider-row">
+        <div class="slider-label-row">
+          <span class="slider-name">トリガーレベル</span>
+          <span class="slider-val" id="val-trig">10</span>
+        </div>
+        <input type="range" id="ctrl-trig" min="0" max="50" step="1" value="10">
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="ctrl-section-title" style="margin-bottom:8px;">表示オプション</div>
+    <div class="toggle-row">
+      <button class="tog-btn active" id="btn-grid"   onclick="toggleGrid()">グリッド</button>
+      <button class="tog-btn active" id="btn-glow"   onclick="toggleGlow()">グロー</button>
+      <button class="tog-btn"        id="btn-freeze" onclick="toggleFreeze()">⏸ 一時停止</button>
+    </div>
+  </div>
+
+  <!-- スタートボタン -->
+  <button class="start-btn" id="start-btn" onclick="toggleAudio()">
+    スタート　— マイクをオンにする
+  </button>
+
+  <!-- ヒント -->
+  <div class="hint-card">
+    <strong>波形</strong>：音の大きさ（上下の幅）と高さ（波の細かさ）がわかります<br>
+    <strong>スペクトル</strong>：どの音の高さが多く含まれているかを棒グラフで表示します<br>
+    <strong>感度</strong>：小さい音でも大きく表示したいときは数値を上げてください
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+let audioCtx, analyser, source, stream;
+let running = false, frozen = false;
+let showGrid = true, showGlow = true;
+let displayMode = 'wave';
+let gain = 3, speedMul = 1, trigLevel = 10;
+let peakDb = -Infinity, peakDecay = 0;
+let animId;
+
+const canvas = document.getElementById('osc-canvas');
+const ctx    = canvas.getContext('2d');
+
+function resize() {
+  const w = canvas.parentElement.clientWidth;
+  canvas.width  = w * window.devicePixelRatio;
+  canvas.height = 240 * window.devicePixelRatio;
+  canvas.style.width  = w + 'px';
+  canvas.style.height = '240px';
+  if (!running) drawIdle();
+}
+window.addEventListener('resize', resize);
+resize();
+
+function drawIdle() {
+  const W = canvas.width, H = canvas.height;
+  ctx.fillStyle = '#fafbfc';
+  ctx.fillRect(0,0,W,H);
+  drawGrid(W, H);
+  ctx.strokeStyle = 'rgba(37,99,235,0.2)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
+}
+drawIdle();
+
+async function toggleAudio() {
+  if (!running) {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.78;
+      source = audioCtx.createMediaStreamSource(stream);
+      source.connect(analyser);
+      running = true;
+      document.getElementById('perm-overlay').style.display = 'none';
+      document.getElementById('start-btn').textContent = '⏹ ストップ　— マイクをオフにする';
+      document.getElementById('start-btn').classList.add('running');
+      animate();
+    } catch(e) {
+      alert('マイクが使えませんでした。ブラウザの許可を確認してください。\n' + e.message);
+    }
+  } else {
+    running = false;
+    cancelAnimationFrame(animId);
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    if (audioCtx) audioCtx.close();
+    document.getElementById('start-btn').textContent = 'スタート　— マイクをオンにする';
+    document.getElementById('start-btn').classList.remove('running');
+    document.getElementById('status-dot').className = 'status-dot';
+    setReadouts('－－','－－','－－');
+    drawIdle();
+  }
+}
+
+function animate() {
+  animId = requestAnimationFrame(animate);
+  if (frozen) return;
+
+  const bufLen  = analyser.frequencyBinCount;
+  const timeBuf = new Float32Array(bufLen);
+  const freqBuf = new Uint8Array(bufLen);
+  analyser.getFloatTimeDomainData(timeBuf);
+  analyser.getByteFrequencyData(freqBuf);
+
+  const W = canvas.width, H = canvas.height;
+  ctx.fillStyle = '#fafbfc';
+  ctx.fillRect(0,0,W,H);
+  if (showGrid) drawGrid(W, H);
+
+  if (displayMode === 'wave') {
+    drawWave(timeBuf, W, H, 0, H);
+  } else if (displayMode === 'fft') {
+    drawFFT(freqBuf, W, H, 0, H);
+  } else {
+    // 上半分：波形、下半分：スペクトル
+    drawWave(timeBuf, W, H, 0, Math.floor(H/2));
+    drawFFT(freqBuf, W, H, Math.floor(H/2), Math.floor(H/2));
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, H/2); ctx.lineTo(W, H/2); ctx.stroke();
+  }
+
+  // Metrics
+  const rms = Math.sqrt(timeBuf.reduce((s,v) => s + v*v, 0) / timeBuf.length);
+  const db  = rms > 0 ? 20 * Math.log10(rms) : -100;
+  if (db > peakDb) { peakDb = db; peakDecay = 150; }
+  else if (peakDecay > 0) peakDecay--;
+  else peakDb = Math.max(peakDb - 0.25, db);
+
+  const domFreq = getDomFreq(freqBuf);
+  const isClip  = rms > 0.85;
+  const isSig   = rms > 0.008;
+
+  const dot = document.getElementById('status-dot');
+  dot.className = 'status-dot' + (isClip ? ' clip' : isSig ? ' on' : '');
+
+  setReadouts(
+    db > -99 ? db.toFixed(1) : '－－',
+    domFreq > 30 ? Math.round(domFreq) : '－－',
+    peakDb > -99 ? peakDb.toFixed(1) : '－－'
+  );
+
+  const vc = document.getElementById('card-vol');
+  vc.className = 'meter-card' + (isClip ? ' clip' : isSig ? ' active-card' : '');
+}
+
+function drawWave(data, W, H, offsetY, areaH) {
+  // トリガー検索
+  const thresh = trigLevel / 1000;
+  let start = 0;
+  for (let i = 1; i < data.length - 1; i++) {
+    if (data[i-1] < thresh && data[i] >= thresh) { start = i; break; }
+  }
+
+  const sliceW   = W / (data.length / speedMul);
+  const midY     = offsetY + areaH / 2;
+  const ampScale = areaH * 0.45 * gain;
+  const maxSamples = Math.ceil(W / sliceW);
+
+  // 塗りつぶし
+  ctx.beginPath();
+  ctx.moveTo(0, midY);
+  for (let i = 0; i < maxSamples && start + i < data.length; i++) {
+    ctx.lineTo(i * sliceW, midY - data[start + i] * ampScale);
+  }
+  ctx.lineTo((maxSamples - 1) * sliceW, midY);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(37,99,235,0.07)';
+  ctx.fill();
+
+  // グロー
+  if (showGlow) {
+    ctx.save();
+    ctx.shadowBlur  = 10;
+    ctx.shadowColor = 'rgba(37,99,235,0.4)';
+    drawWaveLine(data, start, sliceW, midY, ampScale, maxSamples, 'rgba(37,99,235,0.25)', 4);
+    ctx.restore();
+  }
+
+  // メインライン
+  drawWaveLine(data, start, sliceW, midY, ampScale, maxSamples, '#2563eb', 1.8);
+
+  // ゼロライン
+  ctx.strokeStyle = 'rgba(37,99,235,0.15)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.moveTo(0, midY); ctx.lineTo(W, midY); ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+function drawWaveLine(data, start, sliceW, midY, amp, maxSamples, color, lw) {
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = lw;
+  ctx.lineJoin    = 'round';
+  ctx.lineCap     = 'round';
+  for (let i = 0; i < maxSamples && start + i < data.length; i++) {
+    const x = i * sliceW;
+    const y = midY - data[start + i] * amp;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+}
+
+function drawFFT(freqData, W, H, offsetY, areaH) {
+  const count = Math.floor(freqData.length * 0.5);
+  const barW  = W / count;
+
+  for (let i = 0; i < count; i++) {
+    const v  = freqData[i] / 255;
+    const bH = v * areaH * 0.9;
+    const x  = i * barW;
+
+    // 色: 低→青、中→緑、高→赤
+    const hue = 220 - v * 180;
+    const col = `hsl(${hue},75%,55%)`;
+
+    if (showGlow && v > 0.3) {
+      ctx.shadowBlur  = 6;
+      ctx.shadowColor = col;
+    } else {
+      ctx.shadowBlur = 0;
+    }
+
+    const grad = ctx.createLinearGradient(0, offsetY + areaH, 0, offsetY + areaH - bH);
+    grad.addColorStop(0, `hsla(${hue},75%,65%,0.3)`);
+    grad.addColorStop(1, col);
+    ctx.fillStyle = grad;
+    ctx.fillRect(x + 0.5, offsetY + areaH - bH, Math.max(barW - 1, 0.5), bH);
+  }
+  ctx.shadowBlur = 0;
+}
+
+function drawGrid(W, H) {
+  const cols = 10, rows = 8;
+  ctx.strokeStyle = 'rgba(0,0,0,0.05)';
+  ctx.lineWidth   = 1;
+  for (let i = 0; i <= cols; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i/cols*W, 0); ctx.lineTo(i/cols*W, H);
+    ctx.stroke();
+  }
+  for (let i = 0; i <= rows; i++) {
+    ctx.strokeStyle = i === rows/2 ? 'rgba(0,0,0,0.1)' : 'rgba(0,0,0,0.05)';
+    ctx.beginPath();
+    ctx.moveTo(0, i/rows*H); ctx.lineTo(W, i/rows*H);
+    ctx.stroke();
+  }
+}
+
+function getDomFreq(freqData) {
+  if (!audioCtx) return 0;
+  let max = 0, idx = 0;
+  const limit = Math.floor(freqData.length * 0.45);
+  for (let i = 2; i < limit; i++) {
+    if (freqData[i] > max) { max = freqData[i]; idx = i; }
+  }
+  return max < 8 ? 0 : idx * audioCtx.sampleRate / analyser.fftSize;
+}
+
+function setReadouts(vol, freq, peak) {
+  document.getElementById('disp-vol').innerHTML  = `${vol}<span class="meter-unit">dB</span>`;
+  document.getElementById('disp-freq').innerHTML = `${freq}<span class="meter-unit">Hz</span>`;
+  document.getElementById('disp-peak').innerHTML = `${peak}<span class="meter-unit">dB</span>`;
+}
+
+// Sliders
+document.getElementById('ctrl-gain').addEventListener('input', function() {
+  gain = parseFloat(this.value);
+  document.getElementById('val-gain').textContent = gain.toFixed(1);
+});
+
+const speedLabels = ['おそい','やや遅い','標準','やや速い','はやい'];
+const speedVals   = [0.5, 0.75, 1, 1.5, 2];
+document.getElementById('ctrl-speed').addEventListener('input', function() {
+  const i = parseInt(this.value) - 1;
+  speedMul = speedVals[i];
+  document.getElementById('val-speed').textContent = speedLabels[i];
+});
+
+document.getElementById('ctrl-trig').addEventListener('input', function() {
+  trigLevel = parseInt(this.value);
+  document.getElementById('val-trig').textContent = trigLevel;
+});
+
+// Mode chips
+document.querySelectorAll('.mode-chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('.mode-chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    displayMode = chip.dataset.mode;
+  });
+});
+
+function toggleGrid() {
+  showGrid = !showGrid;
+  document.getElementById('btn-grid').classList.toggle('active', showGrid);
+}
+function toggleGlow() {
+  showGlow = !showGlow;
+  document.getElementById('btn-glow').classList.toggle('active', showGlow);
+}
+function toggleFreeze() {
+  frozen = !frozen;
+  const btn = document.getElementById('btn-freeze');
+  btn.classList.toggle('active', frozen);
+  btn.textContent = frozen ? '▶ 再開' : '⏸ 一時停止';
+}
+</script>
+</body>
+</html>
