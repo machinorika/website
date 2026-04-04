@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>まちの理科室 活動報告</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap');
+ 
+:root {
+  --green:    #2d6a2d;
+  --green-lo: #f0f7f0;
+  --border:   #e0e8e0;
+  --text:     #1a2e1a;
+  --text-mid: #556055;
+  --text-lo:  #9aaa9a;
+  --white:    #ffffff;
+  --bg:       #f4f7f4;
+  --shadow:   0 4px 24px rgba(45,106,45,0.10);
+}
+ 
+* { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+body {
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+ 
+header {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.logo-area { display: flex; align-items: center; gap: 12px; }
+.logo-text {
+  font-size: 1.35rem; font-weight: 800; color: var(--green);
+  letter-spacing: 0.02em; display: flex; align-items: center; gap: 2px;
+}
+.logo-ri {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.45em; height: 1.45em;
+  background: var(--green); color: #fff;
+  border-radius: 3px; font-size: 0.92em; font-weight: 800; margin: 0 1px;
+}
+.header-doc-title {
+  font-size: 0.8rem; font-weight: 700; color: var(--text-mid);
+  border-left: 2px solid var(--border); padding-left: 12px;
+}
+.header-right { font-size: 0.8rem; color: var(--text-mid); font-weight: 700; }
+ 
+.viewer-wrap { max-width: 860px; margin: 0 auto; padding: 24px 16px 40px; }
+ 
+/* ── 拡大縮小 ── */
+.zoom-bar {
+  display: flex; align-items: center; justify-content: center;
+  gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+}
+.zoom-label { font-size: 0.75rem; font-weight: 700; color: var(--text-lo); }
+.zoom-val   { font-size: 0.85rem; font-weight: 800; color: var(--text-mid); min-width: 44px; text-align: center; }
+ 
+/* ── キャンバスカード ── */
+.canvas-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin-bottom: 16px;
+  position: relative;
+  min-height: 200px;
+}
+#pdf-canvas { display: block; width: 100%; height: auto; }
+ 
+.loading-overlay {
+  position: absolute; inset: 0; background: var(--white);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px; z-index: 10;
+}
+.spinner {
+  width: 36px; height: 36px;
+  border: 3px solid var(--border); border-top-color: var(--green);
+  border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 0.85rem; font-weight: 700; color: var(--text-mid); }
+ 
+.error-box {
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px; padding: 40px 24px; text-align: center;
+}
+.error-icon  { font-size: 2.5rem; }
+.error-title { font-size: 1rem; font-weight: 800; }
+.error-desc  { font-size: 0.8rem; color: var(--text-mid); line-height: 1.8; }
+.error-path  { font-size: 0.75rem; font-family: monospace; background: #f5f5f5; padding: 6px 14px; border-radius: 6px; color: #555; word-break: break-all; }
+ 
+.download-bar { text-align: center; padding: 14px; border-top: 1px solid var(--border); }
+.download-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 0.8rem; font-weight: 700; color: var(--text-mid);
+  text-decoration: none; padding: 8px 16px;
+  border: 1.5px solid var(--border); border-radius: 8px; transition: all 0.15s;
+}
+.download-link:hover { border-color: var(--green); color: var(--green); background: var(--green-lo); }
+ 
+/* ── ナビ ── */
+.nav-bar {
+  display: flex; align-items: center; justify-content: center;
+  gap: 10px; flex-wrap: wrap; margin-bottom: 12px;
+}
+.nav-btn {
+  display: flex; align-items: center; gap: 5px;
+  padding: 10px 16px;
+  background: var(--white); border: 1.5px solid var(--border); border-radius: 8px;
+  color: var(--text-mid); font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.15s;
+}
+.nav-btn:hover:not(:disabled) { border-color: var(--green); color: var(--green); background: var(--green-lo); }
+.nav-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.nav-btn.primary { background: var(--green); border-color: var(--green); color: #fff; padding: 10px 22px; }
+.nav-btn.primary:hover:not(:disabled) { background: #1e4d1e; border-color: #1e4d1e; color: #fff; }
+ 
+.page-indicator { font-size: 0.9rem; font-weight: 800; color: var(--text-mid); min-width: 90px; text-align: center; }
+ 
+.page-jump { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; font-weight: 700; color: var(--text-lo); }
+.page-jump input {
+  width: 52px; padding: 8px 6px;
+  border: 1.5px solid var(--border); border-radius: 6px;
+  text-align: center; font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 0.85rem; font-weight: 700; outline: none; transition: border-color 0.15s;
+}
+.page-jump input:focus { border-color: var(--green); }
+ 
+/* ── サムネイル ── */
+.thumb-section { margin-top: 4px; }
+.thumb-label { font-size: 0.7rem; font-weight: 700; color: var(--text-lo); margin-bottom: 8px; }
+.thumb-row {
+  display: flex; gap: 8px; overflow-x: auto;
+  padding: 4px 2px 8px;
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+.thumb-row::-webkit-scrollbar { height: 4px; }
+.thumb-row::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+ 
+.thumb {
+  flex-shrink: 0; width: 64px; cursor: pointer;
+  border-radius: 6px; overflow: hidden;
+  border: 2px solid transparent; transition: all 0.15s;
+  background: var(--border); position: relative;
+}
+.thumb:hover { border-color: var(--green); }
+.thumb.active { border-color: var(--green); box-shadow: 0 0 0 2px rgba(45,106,45,0.2); }
+.thumb canvas { display: block; width: 100%; height: auto; }
+.thumb-num {
+  position: absolute; bottom: 2px; right: 4px;
+  font-size: 0.55rem; font-weight: 800;
+  color: rgba(255,255,255,0.95); text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+ 
+.keyboard-hint { text-align: center; font-size: 0.7rem; color: var(--text-lo); font-weight: 500; margin: 10px 0 4px; }
+kbd { background: #f0f0f0; border: 1px solid #ccc; border-radius: 3px; padding: 1px 6px; font-family: monospace; font-size: 0.7rem; }
+</style>
+</head>
+<body>
+ 
+<header>
+  <div class="logo-area">
+    <div class="logo-text">まちの<span class="logo-ri">理</span>科室</div>
+    <div class="header-doc-title">活動報告 / 自然への誘い展</div>
+  </div>
+  <div class="header-right">📄 全10ページ</div>
+</header>
+ 
+<div class="viewer-wrap">
+ 
+  <div class="zoom-bar">
+    <span class="zoom-label">表示サイズ</span>
+    <button class="nav-btn" onclick="changeZoom(-0.15)">－</button>
+    <span class="zoom-val" id="zoom-val">100%</span>
+    <button class="nav-btn" onclick="changeZoom(+0.15)">＋</button>
+    <button class="nav-btn" onclick="resetZoom()" style="font-size:0.75rem;">幅に合わせる</button>
+  </div>
+ 
+  <div class="canvas-card" id="canvas-card">
+    <div class="loading-overlay" id="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">PDFを読み込んでいます…</div>
+    </div>
+    <div class="error-box" id="error-box">
+      <div class="error-icon">📄</div>
+      <div class="error-title">PDFを読み込めませんでした</div>
+      <div class="error-desc">
+        PDFファイルをこのHTMLと<strong>同じフォルダ</strong>に置いて、<br>
+        下のファイル名と一致しているか確認してください。
+      </div>
+      <div class="error-path" id="error-path"></div>
+      <div class="error-desc" style="margin-top:8px; font-size:0.75rem;">
+        ※ ローカル（手元のPC）で開いている場合はブラウザのセキュリティ制限でエラーになることがあります。<br>
+        GitHub Pages にアップロードすると正常に動作します。
+      </div>
+    </div>
+    <canvas id="pdf-canvas"></canvas>
+    <div class="download-bar">
+      <a class="download-link" id="dl-link" href="#" download>⬇ PDFをダウンロード</a>
+    </div>
+  </div>
+ 
+  <div class="nav-bar">
+    <button class="nav-btn" id="btn-first" onclick="goPage(1)">⏮ 最初</button>
+    <button class="nav-btn" id="btn-prev"  onclick="goPage(currentPage - 1)">◀ 前へ</button>
+    <div class="page-indicator"><span id="page-now">1</span> / <span id="page-total">－</span> ページ</div>
+    <button class="nav-btn primary" id="btn-next" onclick="goPage(currentPage + 1)">次へ ▶</button>
+    <button class="nav-btn" id="btn-last"  onclick="goPage(totalPages)">最後 ⏭</button>
+  </div>
+ 
+  <div class="nav-bar" style="margin-bottom:4px;">
+    <div class="page-jump">
+      ページ指定：
+      <input type="number" id="page-input" min="1" value="1" onkeydown="if(event.key==='Enter')jumpPage()">
+      <span id="page-max">/ － ページ</span>
+      <button class="nav-btn" onclick="jumpPage()" style="padding:8px 12px;">移動</button>
+    </div>
+  </div>
+ 
+  <div class="keyboard-hint">
+    <kbd>←</kbd> <kbd>→</kbd> キーでページ移動 ／ スマホは画面をスワイプでも移動できます
+  </div>
+ 
+  <div class="thumb-section">
+    <div class="thumb-label">ページ一覧</div>
+    <div class="thumb-row" id="thumb-row"></div>
+  </div>
+ 
+</div>
+ 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+// ============================================================
+// ★ PDFファイルのパスをここで指定してください
+//
+//  ・HTMLと同じフォルダにPDFを置く場合：
+//      const PDF_PATH = './report.pdf';
+//
+//  ・assetsフォルダに入れる場合：
+//      const PDF_PATH = './assets/report.pdf';
+//
+//  ・ファイル名に日本語が含まれる場合はそのまま書いてもOKです：
+//      const PDF_PATH = './まちの理科室活動報告.pdf';
+// ============================================================
+const PDF_PATH = './まちの理科室活動報告.pdf';
+ 
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+ 
+let pdfDoc      = null;
+let currentPage = 1;
+let totalPages  = 0;
+let zoomScale   = 1.0;
+let rendering   = false;
+ 
+document.getElementById('error-path').textContent = PDF_PATH;
+document.getElementById('dl-link').href = PDF_PATH;
+ 
+// PDF読み込み
+pdfjsLib.getDocument(PDF_PATH).promise.then(doc => {
+  pdfDoc     = doc;
+  totalPages = doc.numPages;
+  document.getElementById('page-total').textContent = totalPages;
+  document.getElementById('page-max').textContent   = `/ ${totalPages} ページ`;
+  document.getElementById('page-input').max         = totalPages;
+  document.getElementById('loading').style.display  = 'none';
+  renderPage(1);
+  buildThumbs();
+}).catch(err => {
+  document.getElementById('loading').style.display   = 'none';
+  document.getElementById('error-box').style.display = 'flex';
+  console.error('PDF load error:', err);
+});
+ 
+// ページ描画
+function renderPage(num) {
+  if (!pdfDoc || rendering) return;
+  rendering = true;
+  const canvas = document.getElementById('pdf-canvas');
+  const ctx    = canvas.getContext('2d');
+ 
+  pdfDoc.getPage(num).then(page => {
+    const baseVP    = page.getViewport({ scale: 1.0 });
+    const containerW = document.getElementById('canvas-card').clientWidth - 2;
+    const baseScale  = containerW / baseVP.width;
+    const vp         = page.getViewport({ scale: baseScale * zoomScale });
+ 
+    canvas.width  = vp.width;
+    canvas.height = vp.height;
+ 
+    page.render({ canvasContext: ctx, viewport: vp }).promise.then(() => {
+      rendering   = false;
+      currentPage = num;
+      updateUI();
+    });
+  });
+}
+ 
+function goPage(n) {
+  if (!pdfDoc) return;
+  n = Math.max(1, Math.min(n, totalPages));
+  if (n === currentPage && !rendering) return;
+  renderPage(n);
+}
+ 
+function jumpPage() {
+  const v = parseInt(document.getElementById('page-input').value);
+  if (v >= 1 && v <= totalPages) goPage(v);
+}
+ 
+function changeZoom(d) {
+  zoomScale = Math.max(0.4, Math.min(3.0, zoomScale + d));
+  renderPage(currentPage);
+}
+ 
+function resetZoom() {
+  zoomScale = 1.0;
+  renderPage(currentPage);
+}
+ 
+function updateUI() {
+  document.getElementById('page-now').textContent  = currentPage;
+  document.getElementById('page-input').value      = currentPage;
+  document.getElementById('zoom-val').textContent  = Math.round(zoomScale * 100) + '%';
+  document.getElementById('btn-prev').disabled  = currentPage <= 1;
+  document.getElementById('btn-first').disabled = currentPage <= 1;
+  document.getElementById('btn-next').disabled  = currentPage >= totalPages;
+  document.getElementById('btn-last').disabled  = currentPage >= totalPages;
+  document.querySelectorAll('.thumb').forEach((el, i) => {
+    el.classList.toggle('active', i + 1 === currentPage);
+  });
+  const active = document.querySelector('.thumb.active');
+  if (active) active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+}
+ 
+// サムネイル生成
+function buildThumbs() {
+  const row = document.getElementById('thumb-row');
+  for (let i = 1; i <= totalPages; i++) {
+    const wrap = document.createElement('div');
+    wrap.className = 'thumb' + (i === 1 ? ' active' : '');
+    wrap.dataset.page = i;
+    wrap.title = `${i} ページ`;
+    wrap.onclick = () => goPage(i);
+ 
+    const tc  = document.createElement('canvas');
+    const num = document.createElement('div');
+    num.className   = 'thumb-num';
+    num.textContent = i;
+    wrap.appendChild(tc);
+    wrap.appendChild(num);
+    row.appendChild(wrap);
+ 
+    // 非同期でサムネイル描画
+    ((pageNum, thumbCanvas) => {
+      pdfDoc.getPage(pageNum).then(page => {
+        const vp = page.getViewport({ scale: 0.14 });
+        thumbCanvas.width  = vp.width;
+        thumbCanvas.height = vp.height;
+        page.render({ canvasContext: thumbCanvas.getContext('2d'), viewport: vp });
+      });
+    })(i, tc);
+  }
+}
+ 
+// キーボード
+document.addEventListener('keydown', e => {
+  if (['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') goPage(currentPage + 1);
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   goPage(currentPage - 1);
+  if (e.key === 'Home') goPage(1);
+  if (e.key === 'End')  goPage(totalPages);
+});
+ 
+// スワイプ（スマホ）
+let touchX = 0;
+const card = document.getElementById('canvas-card');
+card.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; }, { passive: true });
+card.addEventListener('touchend',   e => {
+  const dx = e.changedTouches[0].clientX - touchX;
+  if (Math.abs(dx) > 50) dx < 0 ? goPage(currentPage + 1) : goPage(currentPage - 1);
+}, { passive: true });
+</script>
+</body>
+</html>
