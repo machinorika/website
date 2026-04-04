@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>まちの理科室 オシロスコープ</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=M+PLUS+Rounded+1c:wght@700;800&display=swap');
+
+:root {
+  --bg:        #0a0f0a;
+  --panel:     #0d1a0e;
+  --bezel:     #1a2e1c;
+  --bezel2:    #243d26;
+  --green:     #00ff41;
+  --green-dim: #00a828;
+  --green-lo:  #004d15;
+  --amber:     #ffaa00;
+  --red:       #ff3333;
+  --cyan:      #00e5ff;
+  --grid:      rgba(0,255,65,0.12);
+  --grid-hi:   rgba(0,255,65,0.25);
+  --text:      #00ff41;
+  --text-dim:  #00a828;
+  --screw:     #2a4a2c;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; min-height: 100vh;
+  background: var(--bg);
+  font-family: 'Share Tech Mono', monospace;
+  color: var(--text);
+  overflow-x: hidden;
+  user-select: none;
+}
+
+/* ── OUTER CHASSIS ── */
+.chassis {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+/* ── TITLE BAR ── */
+.title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--bezel);
+  border: 1px solid var(--green-lo);
+  border-radius: 6px 6px 0 0;
+  margin-bottom: 2px;
+}
+.brand {
+  font-family: 'Orbitron', monospace;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 0.15em;
+}
+.model {
+  font-family: 'Orbitron', monospace;
+  font-size: 1rem;
+  font-weight: 900;
+  color: var(--green);
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 12px var(--green);
+}
+.status-leds {
+  display: flex; gap: 8px; align-items: center;
+}
+.led {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  transition: all 0.2s;
+}
+.led.on-green  { background: var(--green); box-shadow: 0 0 8px var(--green); }
+.led.on-amber  { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+.led.on-red    { background: var(--red);   box-shadow: 0 0 8px var(--red); }
+
+/* ── SCREEN SECTION ── */
+.screen-section {
+  background: var(--bezel);
+  border: 1px solid var(--green-lo);
+  border-top: none;
+  padding: 12px 12px 8px;
+}
+
+.screen-outer {
+  background: #020902;
+  border: 3px solid #1a2e1c;
+  border-radius: 4px;
+  box-shadow:
+    inset 0 0 40px rgba(0,0,0,0.8),
+    inset 0 0 2px var(--green-lo),
+    0 0 20px rgba(0,255,65,0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+/* phosphor CRT glow overlay */
+.screen-outer::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.06) 2px,
+    rgba(0,0,0,0.06) 4px
+  );
+  pointer-events: none;
+  z-index: 10;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 280px;
+  image-rendering: pixelated;
+}
+
+/* ── READOUTS BELOW SCREEN ── */
+.readout-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.readout {
+  flex: 1; min-width: 100px;
+  background: #060d06;
+  border: 1px solid var(--green-lo);
+  border-radius: 4px;
+  padding: 8px 12px;
+}
+.readout-label {
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  letter-spacing: 0.12em;
+  margin-bottom: 4px;
+}
+.readout-value {
+  font-family: 'Orbitron', monospace;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--green);
+  text-shadow: 0 0 10px var(--green);
+}
+.readout-unit {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  margin-left: 4px;
+}
+
+/* ── CONTROLS ── */
+.controls-section {
+  background: var(--panel);
+  border: 1px solid var(--green-lo);
+  border-top: 2px solid var(--bezel2);
+  padding: 14px 12px;
+  margin-top: 2px;
+  border-radius: 0 0 6px 6px;
+}
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.ctrl-group {
+  background: #060d06;
+  border: 1px solid var(--green-lo);
+  border-radius: 4px;
+  padding: 10px 12px;
+}
+.ctrl-label {
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* Knob-style range */
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--green-lo);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  border: 2px solid #0a0f0a;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb:active {
+  box-shadow: 0 0 16px var(--green);
+}
+
+.range-row {
+  display: flex; align-items: center; gap: 8px;
+}
+.range-val {
+  font-size: 0.75rem;
+  color: var(--green);
+  min-width: 32px;
+  text-align: right;
+}
+
+/* Toggle buttons */
+.btn-row-ctrl {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.ctrl-btn {
+  flex: 1;
+  padding: 10px 8px;
+  background: #0d1a0e;
+  border: 1px solid var(--green-lo);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+  min-width: 70px;
+}
+.ctrl-btn:hover {
+  border-color: var(--green);
+  color: var(--green);
+  box-shadow: 0 0 8px rgba(0,255,65,0.2);
+}
+.ctrl-btn.active {
+  background: var(--green-lo);
+  border-color: var(--green);
+  color: var(--green);
+  box-shadow: 0 0 12px rgba(0,255,65,0.3), inset 0 0 8px rgba(0,255,65,0.1);
+}
+
+/* Big start button */
+.start-btn {
+  width: 100%;
+  padding: 14px;
+  background: #061006;
+  border: 2px solid var(--green);
+  border-radius: 4px;
+  color: var(--green);
+  font-family: 'Orbitron', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-shadow: 0 0 8px var(--green);
+  box-shadow: 0 0 12px rgba(0,255,65,0.15);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.start-btn:hover {
+  background: rgba(0,255,65,0.1);
+  box-shadow: 0 0 24px rgba(0,255,65,0.4);
+}
+.start-btn.running {
+  border-color: var(--red);
+  color: var(--red);
+  text-shadow: 0 0 8px var(--red);
+  box-shadow: 0 0 12px rgba(255,51,51,0.3);
+  background: rgba(255,51,51,0.05);
+}
+
+/* mode pills */
+.mode-pills {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.pill {
+  padding: 6px 12px;
+  border: 1px solid var(--green-lo);
+  border-radius: 2px;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  cursor: pointer;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  transition: all 0.15s;
+}
+.pill:hover { border-color: var(--green); color: var(--green); }
+.pill.active {
+  background: var(--green-lo);
+  border-color: var(--green);
+  color: var(--green);
+  box-shadow: 0 0 6px rgba(0,255,65,0.3);
+}
+
+/* ── FOOTER ── */
+.footer {
+  text-align: center;
+  padding: 10px;
+  font-size: 0.6rem;
+  color: var(--green-lo);
+  letter-spacing: 0.1em;
+}
+
+/* ── PERMISSION SCREEN ── */
+.permission-overlay {
+  position: absolute; inset: 0;
+  background: rgba(2,9,2,0.95);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 12px;
+  z-index: 20;
+  border-radius: 2px;
+}
+.perm-icon { font-size: 3rem; }
+.perm-text {
+  font-family: 'M PLUS Rounded 1c', sans-serif;
+  font-size: 0.9rem;
+  color: var(--green);
+  text-align: center;
+  line-height: 1.6;
+}
+.perm-btn {
+  padding: 12px 28px;
+  background: transparent;
+  border: 2px solid var(--green);
+  border-radius: 4px;
+  color: var(--green);
+  font-family: 'Orbitron', monospace;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  text-shadow: 0 0 8px var(--green);
+  box-shadow: 0 0 16px rgba(0,255,65,0.25);
+  transition: all 0.2s;
+}
+.perm-btn:hover { background: rgba(0,255,65,0.1); box-shadow: 0 0 28px rgba(0,255,65,0.4); }
+
+/* ── HELP BAR ── */
+.help-bar {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #060d06;
+  border: 1px solid var(--green-lo);
+  border-radius: 4px;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+.help-bar span { color: var(--green); }
+</style>
+</head>
+<body>
+
+<div class="chassis">
+
+  <!-- Title bar -->
+  <div class="title-bar">
+    <div>
+      <div class="brand">まちの理科室</div>
+      <div class="model">OSC-1 OSCILLOSCOPE</div>
+    </div>
+    <div class="status-leds">
+      <div class="led" id="led-power"></div>
+      <div class="led" id="led-signal"></div>
+      <div class="led" id="led-clip"></div>
+    </div>
+  </div>
+
+  <!-- Screen -->
+  <div class="screen-section">
+    <div class="screen-outer" id="screen-outer">
+      <canvas id="osc-canvas"></canvas>
+      <!-- Permission overlay -->
+      <div class="permission-overlay" id="perm-overlay">
+        <div class="perm-icon">🎙️</div>
+        <div class="perm-text">
+          マイクをつかって<br>音の波形をリアルタイムで表示します<br><br>
+          <span style="font-size:0.75rem;color:#00a828;">スタートボタンを押してマイクをONにしてね</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Readouts -->
+    <div class="readout-row">
+      <div class="readout">
+        <div class="readout-label">VOLUME</div>
+        <div class="readout-value" id="disp-vol">---<span class="readout-unit">dB</span></div>
+      </div>
+      <div class="readout">
+        <div class="readout-label">FREQUENCY</div>
+        <div class="readout-value" id="disp-freq">---<span class="readout-unit">Hz</span></div>
+      </div>
+      <div class="readout">
+        <div class="readout-label">PEAK</div>
+        <div class="readout-value" id="disp-peak">---<span class="readout-unit">dB</span></div>
+      </div>
+      <div class="readout">
+        <div class="readout-label">MODE</div>
+        <div class="readout-value" id="disp-mode" style="font-size:0.85rem;">WAVE</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls-section">
+
+    <div class="controls-grid">
+
+      <!-- Gain -->
+      <div class="ctrl-group">
+        <span class="ctrl-label">▶ GAIN / 感度</span>
+        <div class="range-row">
+          <input type="range" id="ctrl-gain" min="1" max="10" step="0.1" value="3">
+          <div class="range-val" id="val-gain">3.0</div>
+        </div>
+      </div>
+
+      <!-- Speed -->
+      <div class="ctrl-group">
+        <span class="ctrl-label">▶ TIME/DIV / はやさ</span>
+        <div class="range-row">
+          <input type="range" id="ctrl-speed" min="1" max="5" step="1" value="3">
+          <div class="range-val" id="val-speed">×1</div>
+        </div>
+      </div>
+
+      <!-- Trigger -->
+      <div class="ctrl-group">
+        <span class="ctrl-label">▶ TRIGGER LEVEL</span>
+        <div class="range-row">
+          <input type="range" id="ctrl-trig" min="0" max="50" step="1" value="10">
+          <div class="range-val" id="val-trig">10</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Mode buttons -->
+    <div style="margin-bottom:10px;">
+      <div class="ctrl-label">▶ DISPLAY MODE / 表示モード</div>
+      <div class="mode-pills">
+        <div class="pill active" data-mode="wave">🌊 WAVE 波形</div>
+        <div class="pill" data-mode="fft">📊 FREQ スペクトル</div>
+        <div class="pill" data-mode="both">⚡ BOTH 両方</div>
+      </div>
+    </div>
+
+    <!-- Toggle controls -->
+    <div class="btn-row-ctrl" style="margin-bottom:10px;">
+      <button class="ctrl-btn active" id="btn-grid" onclick="toggleGrid()">⊞ GRID</button>
+      <button class="ctrl-btn active" id="btn-glow" onclick="toggleGlow()">✦ GLOW</button>
+      <button class="ctrl-btn" id="btn-freeze" onclick="toggleFreeze()">⏸ FREEZE</button>
+      <button class="ctrl-btn" id="btn-invert" onclick="toggleInvert()">◑ INVERT</button>
+    </div>
+
+    <!-- Start / Stop -->
+    <button class="start-btn" id="start-btn" onclick="toggleAudio()">
+      ▶ START — マイクをONにする
+    </button>
+
+    <!-- Help -->
+    <div class="help-bar">
+      <span>WAVE</span>: 音の波形（上下の大きさ＝音の大きさ、密度＝音の高さ）　
+      <span>FREQ</span>: 周波数スペクトル（どの高さの音が多いか）　
+      <span>GAIN</span>: 波形の大きさを調整
+    </div>
+  </div>
+
+  <div class="footer">OSC-1 REV.A &nbsp;|&nbsp; まちの理科室 SOUND LAB &nbsp;|&nbsp; Web Audio API</div>
+
+</div>
+
+<script>
+// ── STATE ──
+let audioCtx, analyser, source, stream;
+let running = false, frozen = false;
+let showGrid = true, showGlow = true, inverted = false;
+let displayMode = 'wave';
+let gain = 3, speedMul = 1, trigLevel = 10;
+let peakDb = -Infinity, peakDecay = 0;
+let animId;
+
+const canvas = document.getElementById('osc-canvas');
+const ctx    = canvas.getContext('2d');
+
+// ── RESIZE ──
+function resize() {
+  const outer = document.getElementById('screen-outer');
+  canvas.width  = outer.clientWidth  * window.devicePixelRatio;
+  canvas.height = 280               * window.devicePixelRatio;
+  canvas.style.height = '280px';
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ── DRAW IDLE ──
+drawIdle();
+function drawIdle() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#020902';
+  ctx.fillRect(0,0,W,H);
+  drawGridLines(W, H);
+  // flat line
+  ctx.strokeStyle = 'rgba(0,255,65,0.3)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(0, H/2);
+  ctx.lineTo(W, H/2);
+  ctx.stroke();
+}
+
+// ── AUDIO START/STOP ──
+async function toggleAudio() {
+  if (!running) {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.75;
+      source = audioCtx.createMediaStreamSource(stream);
+      source.connect(analyser);
+
+      running = true;
+      document.getElementById('perm-overlay').style.display = 'none';
+      document.getElementById('start-btn').textContent = '⏹ STOP — マイクをOFFにする';
+      document.getElementById('start-btn').classList.add('running');
+      document.getElementById('led-power').classList.add('on-green');
+      animate();
+    } catch(e) {
+      alert('マイクが使えませんでした。ブラウザの許可を確認してね。\n' + e.message);
+    }
+  } else {
+    running = false;
+    cancelAnimationFrame(animId);
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    if (audioCtx) audioCtx.close();
+    document.getElementById('start-btn').textContent = '▶ START — マイクをONにする';
+    document.getElementById('start-btn').classList.remove('running');
+    document.getElementById('led-power').classList.remove('on-green');
+    document.getElementById('led-signal').classList.remove('on-amber');
+    document.getElementById('led-clip').classList.remove('on-red');
+    setReadouts('---','---','---');
+    drawIdle();
+  }
+}
+
+// ── ANIMATE ──
+function animate() {
+  animId = requestAnimationFrame(animate);
+  if (frozen) return;
+
+  const bufLen = analyser.frequencyBinCount;
+  const timeData = new Float32Array(bufLen);
+  const freqData = new Uint8Array(bufLen);
+  analyser.getFloatTimeDomainData(timeData);
+  analyser.getByteFrequencyData(freqData);
+
+  const W = canvas.width, H = canvas.height;
+
+  ctx.fillStyle = inverted ? '#f0fff0' : '#020902';
+  ctx.fillRect(0,0,W,H);
+
+  if (showGrid) drawGridLines(W, H);
+
+  if (displayMode === 'wave') {
+    drawWave(timeData, W, H);
+  } else if (displayMode === 'fft') {
+    drawFFT(freqData, W, H);
+  } else {
+    drawWave(timeData, W, H * 0.5, 0);
+    drawFFT(freqData, W, H * 0.5, H * 0.5);
+    // divider
+    ctx.strokeStyle = 'rgba(0,255,65,0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, H*0.5); ctx.lineTo(W, H*0.5); ctx.stroke();
+  }
+
+  // Metrics
+  const rms = Math.sqrt(timeData.reduce((s,v) => s+v*v, 0) / timeData.length);
+  const db  = rms > 0 ? 20 * Math.log10(rms) : -100;
+
+  // Peak hold
+  if (db > peakDb) { peakDb = db; peakDecay = 120; }
+  else if (peakDecay > 0) peakDecay--;
+  else peakDb = Math.max(peakDb - 0.3, db);
+
+  // Dominant frequency
+  const domFreq = getDominantFreq(freqData);
+
+  // LEDs
+  document.getElementById('led-signal').className = 'led' + (rms > 0.01 ? ' on-amber' : '');
+  document.getElementById('led-clip').className   = 'led' + (rms > 0.8  ? ' on-red'   : '');
+
+  setReadouts(
+    db.toFixed(1),
+    domFreq > 0 ? Math.round(domFreq) : '---',
+    peakDb > -99 ? peakDb.toFixed(1) : '---'
+  );
+}
+
+function drawWave(data, W, H, offsetY = 0) {
+  const sliceW = W / (data.length / speedMul);
+  const mid    = offsetY + H / 2;
+
+  // Trigger: find zero crossing
+  let startIdx = 0;
+  const thresh = trigLevel / 1000;
+  for (let i = 1; i < data.length - 1; i++) {
+    if (data[i-1] < thresh && data[i] >= thresh) { startIdx = i; break; }
+  }
+
+  if (showGlow) {
+    ctx.save();
+    ctx.shadowBlur = 12;
+    ctx.shadowColor = inverted ? '#005520' : '#00ff41';
+    drawWavePath(data, startIdx, sliceW, mid, W, H * 0.45 * gain, inverted ? 'rgba(0,80,20,0.3)' : 'rgba(0,200,50,0.5)', 3);
+    ctx.restore();
+  }
+  drawWavePath(data, startIdx, sliceW, mid, W, H * 0.45 * gain, inverted ? '#005520' : '#00ff41', 1.5);
+}
+
+function drawWavePath(data, startIdx, sliceW, mid, W, amp, color, lw) {
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = lw;
+  ctx.lineJoin    = 'round';
+  let x = 0;
+  const maxSamples = Math.ceil(W / sliceW);
+  for (let i = 0; i < maxSamples && startIdx + i < data.length; i++) {
+    const v = data[startIdx + i];
+    const y = mid - v * amp;
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    x += sliceW;
+  }
+  ctx.stroke();
+}
+
+function drawFFT(freqData, W, H, offsetY = 0) {
+  const barW = W / (freqData.length * 0.5);
+  const count = Math.floor(freqData.length * 0.5);
+
+  for (let i = 0; i < count; i++) {
+    const v   = freqData[i] / 255;
+    const bH  = v * H * 0.9;
+    const x   = i * barW;
+    const hue = 120 - v * 80; // green → yellow → red
+
+    if (showGlow) {
+      ctx.shadowBlur  = 6;
+      ctx.shadowColor = `hsl(${hue},100%,50%)`;
+    }
+
+    const grad = ctx.createLinearGradient(0, offsetY + H, 0, offsetY + H - bH);
+    grad.addColorStop(0, inverted ? `hsla(${hue},100%,25%,0.4)` : `hsla(${hue},100%,20%,0.6)`);
+    grad.addColorStop(1, inverted ? `hsl(${hue},100%,30%)`      : `hsl(${hue},100%,55%)`);
+
+    ctx.fillStyle = grad;
+    ctx.fillRect(x, offsetY + H - bH, Math.max(barW - 1, 1), bH);
+  }
+  ctx.shadowBlur = 0;
+}
+
+function drawGridLines(W, H) {
+  const cols = 10, rows = 8;
+  ctx.strokeStyle = 'rgba(0,255,65,0.10)';
+  ctx.lineWidth   = 0.5;
+  for (let i = 0; i <= cols; i++) {
+    const x = i / cols * W;
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+  }
+  for (let i = 0; i <= rows; i++) {
+    const y = i / rows * H;
+    ctx.strokeStyle = i === rows/2 ? 'rgba(0,255,65,0.25)' : 'rgba(0,255,65,0.10)';
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+  }
+  // Center cross ticks
+  ctx.strokeStyle = 'rgba(0,255,65,0.35)';
+  ctx.lineWidth   = 1;
+  const mx = W/2, my = H/2;
+  for (let i = -cols*2; i <= cols*2; i++) {
+    const x = mx + i * W/cols/4;
+    ctx.beginPath(); ctx.moveTo(x, my-4); ctx.lineTo(x, my+4); ctx.stroke();
+  }
+  for (let i = -rows*2; i <= rows*2; i++) {
+    const y = my + i * H/rows/4;
+    ctx.beginPath(); ctx.moveTo(mx-4,y); ctx.lineTo(mx+4,y); ctx.stroke();
+  }
+}
+
+function getDominantFreq(freqData) {
+  if (!audioCtx) return 0;
+  let maxVal = 0, maxIdx = 0;
+  const limit = Math.floor(freqData.length * 0.5);
+  for (let i = 2; i < limit; i++) {
+    if (freqData[i] > maxVal) { maxVal = freqData[i]; maxIdx = i; }
+  }
+  if (maxVal < 10) return 0;
+  return maxIdx * audioCtx.sampleRate / (analyser.fftSize);
+}
+
+function setReadouts(vol, freq, peak) {
+  document.getElementById('disp-vol').innerHTML  = `${vol}<span class="readout-unit">dB</span>`;
+  document.getElementById('disp-freq').innerHTML = `${freq}<span class="readout-unit">Hz</span>`;
+  document.getElementById('disp-peak').innerHTML = `${peak}<span class="readout-unit">dB</span>`;
+}
+
+// ── CONTROLS ──
+document.getElementById('ctrl-gain').addEventListener('input', function() {
+  gain = parseFloat(this.value);
+  document.getElementById('val-gain').textContent = gain.toFixed(1);
+});
+
+const speedLabels = ['×0.5','×0.75','×1','×1.5','×2'];
+const speedVals   = [0.5, 0.75, 1, 1.5, 2];
+document.getElementById('ctrl-speed').addEventListener('input', function() {
+  const i = parseInt(this.value) - 1;
+  speedMul = speedVals[i];
+  document.getElementById('val-speed').textContent = speedLabels[i];
+});
+
+document.getElementById('ctrl-trig').addEventListener('input', function() {
+  trigLevel = parseInt(this.value);
+  document.getElementById('val-trig').textContent = trigLevel;
+});
+
+// Mode pills
+document.querySelectorAll('.pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('.pill').forEach(x => x.classList.remove('active'));
+    p.classList.add('active');
+    displayMode = p.dataset.mode;
+    document.getElementById('disp-mode').textContent =
+      displayMode === 'wave' ? 'WAVE' : displayMode === 'fft' ? 'FREQ' : 'BOTH';
+  });
+});
+
+function toggleGrid() {
+  showGrid = !showGrid;
+  document.getElementById('btn-grid').classList.toggle('active', showGrid);
+}
+function toggleGlow() {
+  showGlow = !showGlow;
+  document.getElementById('btn-glow').classList.toggle('active', showGlow);
+}
+function toggleFreeze() {
+  frozen = !frozen;
+  document.getElementById('btn-freeze').classList.toggle('active', frozen);
+  document.getElementById('btn-freeze').textContent = frozen ? '▶ RESUME' : '⏸ FREEZE';
+}
+function toggleInvert() {
+  inverted = !inverted;
+  document.getElementById('btn-invert').classList.toggle('active', inverted);
+  document.getElementById('screen-outer').style.background = inverted ? '#f0fff0' : '#020902';
+}
+</script>
+</body>
+</html>
